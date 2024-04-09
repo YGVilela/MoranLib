@@ -1,0 +1,5 @@
+data
+__pycache__
+samples/cycleData/*
+samples/simInstances/*
+samples/stats/*

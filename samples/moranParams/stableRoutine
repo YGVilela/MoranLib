@@ -1,0 +1,27 @@
+{
+    "name": "stableRoutine",
+    "description": "Stable cyclic treatment routine designed with replicator dynamics for the initial composition x = (0.3, 0.2, 0.5).",
+    "MList": [
+        [
+            [2.0, 2.8, 2.8],
+            [1.8, 1.8, 2.1],
+            [1.8, 2.1, 1.8]
+        ],
+        [
+            [2.0, 2.8, 2.8],
+            [1.8, 1.8, 2.1],
+            [1.8, 2.1, 1.8]
+        ],
+        [
+            [2.0, 2.8, 2.8],
+            [1.8, 1.8, 2.1],
+            [1.8, 2.1, 1.8]
+        ]
+    ],
+    "wList": [
+        [0.1, 0.1, 0.1],
+        [0.0, 0.1, 0.0],
+        [0.0, 0.0, 0.1]
+    ],
+    "tList": [40, 20.4101, 21.9782]
+}
