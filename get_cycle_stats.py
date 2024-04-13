@@ -48,17 +48,16 @@ for name in instanceNames:
     instance = ComposedMoranInstanceData.load_instance(name)
     for cycleNumber in range(instance.currentCycle):
         cycleData = CycleData.load_summarized_data(instance.name, cycleNumber)
-        allCycleData.append({
+        relevantData = {
             "params": instance.params.name,
             "initialPopulation": f"{instance.initialPopulation}",
-            "cycleNumber": cycleNumber,
-            "x1": cycleData.finalPopulation[0],
-            "x2": cycleData.finalPopulation[1],
-            "x3": cycleData.finalPopulation[2],
-            "diffX1": cycleData.finalPopulation[0] - instance.initialPopulation[0],
-            "diffX2": cycleData.finalPopulation[1] - instance.initialPopulation[1],
-            "diffX3": cycleData.finalPopulation[2] - instance.initialPopulation[2],
-        })
+            "cycleNumber": cycleNumber
+        }
+        for index in range(len(cycleData.finalPopulation)):
+            relevantData[f"x{index+1}"] = cycleData.finalPopulation[index]
+            relevantData[f"diffX{index+1}"]  = cycleData.finalPopulation[index] - cycleData.initialPopulation[index]
+
+        allCycleData.append(relevantData)
 
     bar.tick()
 
@@ -87,11 +86,12 @@ bar = SimpleBar(len(groupedData.groups))
 for group in groupedData.groups:
     # Save stats on that group's param folder
     (params, initialPopulation, cycleNumber) = group
-    paramStatsFolder = path.join(saveFolder, params, f"{initialPopulation}")
+    paramStatsFolder = path.join(saveFolder, params, initialPopulation)
     makedirs(paramStatsFolder, exist_ok=True)
 
     # Final points
-    finalPoints = (groupedData.get_group(group)[["x1", "x2", "x3"]]).to_numpy().tolist()
+    pointVars = [f"x{index+1}" for index in range(len(eval(initialPopulation)))]
+    finalPoints = (groupedData.get_group(group)[pointVars]).to_numpy().tolist()
     finalPointsFile = path.join(paramStatsFolder, f"finalPoints_{cycleNumber}.json")
     with open(finalPointsFile, "w") as file:
         json.dump(finalPoints, file)
@@ -99,25 +99,18 @@ for group in groupedData.groups:
 
     # Histogram data
     size = sum(eval(initialPopulation))
-    x1HistData = (groupedData.get_group(group)["x1"]/size).value_counts(bins=intervals, sort=False, normalize=True)
-    x2HistData = (groupedData.get_group(group)["x2"]/size).value_counts(bins=intervals, sort=False, normalize=True)
-    x3HistData = (groupedData.get_group(group)["x3"]/size).value_counts(bins=intervals, sort=False, normalize=True)
+    histData = [
+        (groupedData.get_group(group)[var]/size).value_counts(bins=intervals, sort=False, normalize=True)
+        for var in pointVars
+    ]
 
-    fig, axs = subplots(3, 1, figsize=(9, 9), sharex=True)
-    axs[0].bar(x1HistData.index.mid, x1HistData.values, width=delta, align='center', color="blue")
-    axs[0].set_ylim([0, 1])
-    axs[0].set_title('')
-    axs[0].legend(["x1"])
-
-    axs[1].bar(x2HistData.index.mid, x2HistData.values, width=delta, align='center', color="green")
-    axs[1].set_ylim([0, 1])
-    axs[1].set_title('')
-    axs[1].legend(["x2"])
-
-    axs[2].bar(x3HistData.index.mid, x3HistData.values, width=delta, align='center', color="orange")
-    axs[2].set_ylim([0, 1])
-    axs[2].set_title('')
-    axs[2].legend(["x3"])
+    fig, axs = subplots(len(histData), 1, figsize=(9, 9), sharex=True)
+    colors = ["blue", "green", "orange"]
+    for index in range(len(histData)):
+        axs[index].bar(histData[index].index.mid, histData[index].values, width=delta, align='center', color=colors[index%len(colors)])
+        axs[index].set_ylim([0, 1])
+        axs[index].set_title('')
+        axs[index].legend([f"x{index + 1}"])
 
     allHistFile = path.join(paramStatsFolder, f"histograms_{cycleNumber}.png")
     fig.savefig(allHistFile, bbox_inches='tight')
