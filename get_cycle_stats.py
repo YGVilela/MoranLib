@@ -1,54 +1,36 @@
 """
-This script analyzes Moran process simulations and generates statistical data and plots.
+get_cycle_stats.py
+
+This script generates cycle statistics for composed Moran simulations based on the specified parameters and analysis options.
 
 Usage:
-    python get_stats.py [-r INSTANCE_REGEX] [-f FOLDER] [-d DELTA]
+    python3 get_cycle_stats.py [-r INSTANCE_REGEX] [-f FOLDER] [-d DELTA]
 
 Arguments:
-    -r INSTANCE_REGEX, --instanceRegex INSTANCE_REGEX
-        Regular expression to filter the simulations to be analyzed. Default is '.*'.
-
-    -f FOLDER, --folder FOLDER
-        Main folder to save the statistics. Default is the one set in .env.
-
-    -d DELTA, --delta DELTA
-        Length of the intervals for histograms. Default is 0.02.
-
-Description:
-    This script analyzes Moran process simulations, calculates general statistics, and generates histograms for each simulation group (param/size/cycle).
-    It supports the following options:
-    - Filtering simulation instances using a regular expression.
-    - Specifying the main folder to save the generated statistics and plots.
-    - Adjusting the length of intervals for histograms.
-
-    The script performs the following steps:
-    1. Parses command-line arguments to extract parameters.
-    2. Loads data from Moran process simulations.
-    3. Calculates general statistics and saves them to a CSV file.
-    4. Generates histograms for each simulation group and saves them as PNG images.
+    -r, --instanceRegex: Regular expression to filter the simulations that should be analysed. Default is '.*'.
+    -f, --folder: Main folder to save the stats. Default is the one set in env.
+    -d, --delta: Length of the histograms intervals. Default is 0.02.
 """
-
 
 import argparse
 from datetime import datetime
 import json
-from os import environ, path, makedirs
-from dotenv import load_dotenv
+from os import path, makedirs
 from numpy import arange
 
 from pandas import DataFrame
 from matplotlib.pyplot import subplots, close
 
+from env import Env
 from src.misc.bars import SimpleBar
-from src.db.moranDb import CycleData, InstanceData
+from src.db.composedMoranDbDb import CycleData, ComposedMoranInstanceData
 
 # Parse args
-load_dotenv()
 parser = argparse.ArgumentParser()
 parser.add_argument("-r", "--instanceRegex", help="Regular expression to filter the simulations that should be analysed. Default is '.*'", default=".*")
 parser.add_argument(
-    "-f", "--folder", help="Main folder to save the stats. Default is the one set in .env.", 
-    default=path.join(environ.get("DATA_FOLDER"), environ.get("STATS_FOLDER"))
+    "-f", "--folder", help="Main folder to save the stats. Default is the one set in env.", 
+    default=path.join(Env.DATA_FOLDER.name, Env.STATS_FOLDER.name)
 )
 parser.add_argument("-d", "--delta", help="Length of the histograms intervals. Default is 0.02", default=0.02, type=float)
 
@@ -58,17 +40,17 @@ mainFolder = args.folder
 delta = args.delta
 
 # Load data
-instanceNames = InstanceData.list_instances(instanceRegex)
+instanceNames = ComposedMoranInstanceData.list_instances(instanceRegex)
 bar = SimpleBar(len(instanceNames))
 allCycleData = []
 for name in instanceNames:
     print(f"Loading {name} data.")
-    instance = InstanceData.load_instance(name)
+    instance = ComposedMoranInstanceData.load_instance(name)
     for cycleNumber in range(instance.currentCycle):
         cycleData = CycleData.load_summarized_data(instance.name, cycleNumber)
         allCycleData.append({
             "params": instance.params.name,
-            "size": instance.populationSize,
+            "initialPopulation": f"{instance.initialPopulation}",
             "cycleNumber": cycleNumber,
             "x1": cycleData.finalPopulation[0],
             "x2": cycleData.finalPopulation[1],
@@ -83,7 +65,7 @@ for name in instanceNames:
 df = DataFrame(allCycleData)
 
 # Group data by params, size and cycle number
-groupedData = df.groupby(by=["params", "size", "cycleNumber"])
+groupedData = df.groupby(by=["params", "initialPopulation", "cycleNumber"])
 
 # Init folder
 makedirs(mainFolder, exist_ok=True)
@@ -104,8 +86,8 @@ intervals = arange(0, 1, delta)
 bar = SimpleBar(len(groupedData.groups))
 for group in groupedData.groups:
     # Save stats on that group's param folder
-    (params, size, cycleNumber) = group
-    paramStatsFolder = path.join(saveFolder, params, f"{int(size)}")
+    (params, initialPopulation, cycleNumber) = group
+    paramStatsFolder = path.join(saveFolder, params, f"{initialPopulation}")
     makedirs(paramStatsFolder, exist_ok=True)
 
     # Final points
@@ -116,6 +98,7 @@ for group in groupedData.groups:
     print(f"Final points of {group} saved to {finalPointsFile}")
 
     # Histogram data
+    size = sum(eval(initialPopulation))
     x1HistData = (groupedData.get_group(group)["x1"]/size).value_counts(bins=intervals, sort=False, normalize=True)
     x2HistData = (groupedData.get_group(group)["x2"]/size).value_counts(bins=intervals, sort=False, normalize=True)
     x3HistData = (groupedData.get_group(group)["x3"]/size).value_counts(bins=intervals, sort=False, normalize=True)

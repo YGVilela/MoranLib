@@ -1,37 +1,16 @@
 """
-This script creates multiple simulations using the Moran process with specified parameters.
+new_instances.py
+
+This script creates new instances of Moran simulations based on the specified parameters and initial population distribution.
 
 Usage:
-    python script_name.py paramsName initialPopulation [-n SIM_COUNT] [-p NAME_PREFIX]
+    python3 new_instances.py paramsName initialPopulation [-n SIM_COUNT] [-p NAME_PREFIX]
 
 Arguments:
-    paramsName (str): Name of the Moran parameters file to be used.
-    initialPopulation (str): Initial population distribution for the simulations.
-
-Options:
-    -n SIM_COUNT, --simCount SIM_COUNT
-        Number of simulations to be created. Default is 1.
-
-    -p NAME_PREFIX, --namePrefix NAME_PREFIX
-        Prefix to be used on the simulation's names. Default is an empty string.
-
-Example:
-    python3 new_instance.py stableRoutine "(300, 200, 500)" -n 5
-    python3 new_instance.py unstableRoutine "(300, 200, 500)" -n 5
-
-Description:
-    This script creates multiple simulations using the Moran process with the specified parameters.
-    The Moran parameters file contains the configuration for the simulations.
-    The initial population distribution is provided as a JSON-formatted string.
-    Additional options allow specifying the number of simulations to create and a prefix for the simulation names.
-
-    The script performs the following steps:
-    1. Parses command-line arguments to extract parameters.
-    2. Loads Moran parameters from the specified file.
-    3. Prints information about the simulations to be created.
-    4. Initializes progress bars to track creation progress.
-    5. Creates simulation instances based on the parameters.
-    6. Displays progress bars until all simulations are completed.
+    paramsName: Name of the Moran parameters file to be used.
+    initialPopulation: Initial population distribution for the simulations.
+    -n, --simCount: Number of simulations to be created. Default is 1.
+    -p, --namePrefix: Prefix to be used on the simulation's names. Default is an empty string.
 """
 
 
@@ -39,8 +18,8 @@ from json import loads
 import argparse
 from textwrap import wrap
 
+from src.db.utils import load_params, get_instance_data_class
 from src.misc.bars import CountdownBar, ParallelBar
-from src.db.moranDb import RoutineParams, InstanceData
 from datetime import datetime
 from math import floor
 
@@ -63,7 +42,7 @@ simCount = args.simCount
 namePrefix = f"{args.namePrefix}_" if args.namePrefix != "" else ""
 
 # Safety check
-params = RoutineParams.load_params(paramsName)
+params = load_params(paramsName)
 timestamp = int(round(datetime.now().timestamp()))
 baseName = f"{namePrefix}{params.name}_{timestamp}"
 
@@ -80,7 +59,7 @@ bar = ParallelBar(barSize)
 # Go!
 for index in range(simCount):
     instanceName = f"{baseName}_{index}"
-    instanceData = InstanceData.create_instance(paramsName, initialPopulation, instanceName)
+    get_instance_data_class(params.simType).create_instance(paramsName, initialPopulation, instanceName)
     bar.tick()
 
 bar.wait()

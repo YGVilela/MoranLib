@@ -1,25 +1,23 @@
-from os import environ, path, mkdir, listdir
+from os import path, mkdir, listdir
 from datetime import datetime
-from dotenv import load_dotenv
 import json
 import re
 
-# Load environment variables
-load_dotenv()
+from env import Env
 
 # Define file paths
-dataFolder = environ.get("DATA_FOLDER")
-deterministicParamsFolder = path.join(dataFolder, environ.get("MORAN_PARAMS_FOLDER"))
-cycleDataFolder = path.join(dataFolder, environ.get("CYCLE_DATA_FOLDER"))
-simInstancesFolder = path.join(dataFolder, environ.get("SIMULATION_INSTANCES_FOLDER"))
+dataFolder = Env.DATA_FOLDER.name
+deterministicParamsFolder = path.join(dataFolder, Env.PARAMS_FOLDER.name)
+executionDataFolder = path.join(dataFolder, Env.EXECUTION_DATA_FOLDER.name)
+simInstancesFolder = path.join(dataFolder, Env.SIMPLE_INSTANCES_FOLDER.name)
 
-class RoutineParams:
-    def __init__(self, paramsName, description, MList, wList, tList):
+class SimpleMoranParams:
+    def __init__(self, paramsName, description, M, w):
         self.name = paramsName
         self.description = description
-        self.MList = MList
-        self.wList = wList
-        self.tList = tList
+        self.M = M
+        self.w = w
+        self.simType = "simple"
 
     @staticmethod
     def load_params(name):
@@ -28,36 +26,22 @@ class RoutineParams:
         params = json.load(file)
         file.close()
 
-        return RoutineParams(
+        return SimpleMoranParams(
             params["name"],
             params["description"],
-            params["MList"],
-            params["wList"],
-            params["tList"]
+            params["M"],
+            params["w"]
         )
 
-    def save_params(self):
-        params = {
-            "name": self.name,
-            "description": self.description,
-            "MList": self.MList,
-            "wList": self.wList,
-            "tList": self.tList
-        }
 
-        filePath = path.join(deterministicParamsFolder, self.name)
-        with open(filePath, "w") as file:
-            json.dump(params, file)
-
-
-class InstanceData:
-    def __init__(self, instanceName, paramsName, initialPopulation, currentPopulation, currentCycle):
+class SimpleMoranInstanceData:
+    def __init__(self, instanceName, paramsName, initialPopulation, fixatedIndex, lastStep):
         self.name = instanceName
-        self.params = RoutineParams.load_params(paramsName)
+        self.params = SimpleMoranParams.load_params(paramsName)
         self.initialPopulation = initialPopulation
-        self.currentPopulation = currentPopulation
-        self.currentCycle = currentCycle
-        self.populationSize = sum(currentPopulation)
+        self.fixatedIndex = fixatedIndex
+        self.lastStep = lastStep
+        self.populationSize = sum(initialPopulation)
 
     @staticmethod
     def create_instance(paramsName, initialPopulation, instanceName=None):
@@ -65,16 +49,16 @@ class InstanceData:
             timestamp = int(round(datetime.now().timestamp()))
             instanceName = f"{paramsName}_{timestamp}"
 
-        instanceData = InstanceData(
+        instanceData = SimpleMoranInstanceData(
             instanceName,
             paramsName,
             initialPopulation,
-            initialPopulation,
-            0
+            None,
+            None
         )
 
         instanceData.save_instance()
-        instanceDataFolder = path.join(cycleDataFolder, instanceName)
+        instanceDataFolder = path.join(executionDataFolder, instanceName)
         mkdir(instanceDataFolder)
 
         return instanceData
@@ -86,12 +70,12 @@ class InstanceData:
         params = json.load(file)
         file.close()
 
-        return InstanceData(
+        return SimpleMoranInstanceData(
             params["name"],
             params["paramsName"],
             params["initialPopulation"],
-            params["currentPopulation"],
-            params["currentCycle"]
+            params["fixatedIndex"],
+            params["lastStep"]
         )
 
     def save_instance(self):
@@ -99,8 +83,8 @@ class InstanceData:
             "name": self.name,
             "paramsName": self.params.name,
             "initialPopulation": self.initialPopulation,
-            "currentPopulation": self.currentPopulation,
-            "currentCycle": self.currentCycle
+            "fixatedIndex": self.fixatedIndex,
+            "lastStep": self.lastStep
         }
 
         filePath = path.join(simInstancesFolder, self.name)
@@ -113,15 +97,14 @@ class InstanceData:
 
         return [filename for filename in fullFilelist if re.match(regex, filename)]
 
+class IterationData:
 
-class CycleData:
-
-    def __init__(self, instanceName, cycleNumber, initialPopulation, finalPopulation, bufferSize=100):
+    def __init__(self, instanceName, initialPopulation, lastStep, fixatedIndex, bufferSize=1000):
         # General attributes
         self.instanceName = instanceName
-        self.cycleNumber = cycleNumber
+        self.lastStep = lastStep
         self.initialPopulation = initialPopulation
-        self.finalPopulation = finalPopulation
+        self.fixatedIndex = fixatedIndex
 
         # Data saving attributes
         self.__iterations_file = None
@@ -135,35 +118,35 @@ class CycleData:
         self.__bufferIndex = 1
 
     @staticmethod
-    def load_summarized_data(instanceName, cycleNumber):
-        filePath = path.join(cycleDataFolder, instanceName, f"iterationBrief_{cycleNumber}")
+    def load_summarized_data(instanceName):
+        filePath = path.join(executionDataFolder, instanceName, f"iterationBrief")
         file = open(filePath)
         params = json.load(file)
         file.close()
 
-        return CycleData(
+        return IterationData(
             instanceName,
-            cycleNumber,
             params["initialPopulation"],
-            params["finalPopulation"]
+            params["lastStep"],
+            params["fixatedIndex"]
         )
     
     @staticmethod
-    def start_cycle(instanceName, cycleNumber, initialPopulation, bufferSize=100):
-        cycleData = CycleData(instanceName, cycleNumber, initialPopulation, None, bufferSize)
+    def start_iterations(instanceName, initialPopulation, bufferSize=1000):
+        iterationData = IterationData(instanceName, initialPopulation, None, None, bufferSize)
         
-        filePath = path.join(cycleDataFolder, instanceName, f"iterationDump_{cycleNumber}")
+        filePath = path.join(executionDataFolder, instanceName, f"iterationDump")
         if path.exists(filePath):
             raise Exception("Iterations file already exists!")
 
-        cycleData.__iterations_file = open(filePath, "w")
-        cycleData.__iterations_file.write("[\n")
+        iterationData.__iterations_file = open(filePath, "w")
+        iterationData.__iterations_file.write("[\n")
 
-        return cycleData
+        return iterationData
     
     def write_step(self, step):
         if self.__iterations_file is None:
-            raise Exception("To write steps, please start a new cycle (start_cycle)")
+            raise Exception("To write steps, please start a new iteration (start_iterations)")
         
         # If buffer is full, write it to memory and reset index
         if self.__bufferIndex == self.__bufferSize:
@@ -175,17 +158,18 @@ class CycleData:
         self.__stepBuffer[self.__bufferIndex] = str(step)
         self.__bufferIndex += 1
 
-    def end_cycle(self):
+    def end_iterations(self, lastStep, fixatedIndex):
         if self.__iterations_file is None:
-            raise Exception("This cycle wasn't even started (start_cycle)")
+            raise Exception("These iterations weren't even started (start_iterations)")
         
         # Write final steps
         accumulatedSteps = ",".join(self.__stepBuffer[0:self.__bufferIndex]) 
         self.__iterations_file.write(f"{accumulatedSteps}\n]")
         self.__iterations_file.close()
 
-        # Set final population
-        self.finalPopulation = self.__stepBuffer[self.__bufferIndex-1]
+        # Set fixation data
+        self.fixatedIndex = fixatedIndex
+        self.lastStep = lastStep
 
         self.__iterations_file = None
 
@@ -194,20 +178,20 @@ class CycleData:
     def __save_summarized_data(self):
         params = {
             "instanceName": self.instanceName,
-            "cycleNumber": self.cycleNumber,
             "initialPopulation": self.initialPopulation,
-            "finalPopulation": self.finalPopulation,
+            "lastStep": self.lastStep,
+            "fixatedIndex": self.fixatedIndex,
         }
 
-        filePath = path.join(cycleDataFolder, self.instanceName, f"iterationBrief_{self.cycleNumber}")
+        filePath = path.join(executionDataFolder, self.instanceName, f"iterationBrief")
         with open(filePath, "w") as file:
             json.dump(params, file)
 
-    def load_cycle_data(self):
-        filePath = path.join(cycleDataFolder, self.instanceName, f"iterationDump_{self.cycleNumber}")
+    def load_iteration_data(self):
+        filePath = path.join(executionDataFolder, self.instanceName, f"iterationDump")
         file = open(filePath)
         iterationsData = json.load(file)
         file.close()
 
         return iterationsData
-
+    

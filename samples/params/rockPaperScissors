@@ -1,0 +1,11 @@
+{
+    "name": "rockPaperScissors",
+    "description": "Two players interact in a game of rock-paper-scissors where each player can choose one of three strategies: rock, paper, or scissors. Rock beats scissors, scissors beat paper, and paper beats rock. Population given as (#rocks, #papers, #scissors).",
+    "type": "simple",
+    "M": [
+        [1, 0, 2], 
+        [2, 1, 0], 
+        [0, 2, 1]
+    ],
+    "w": [1, 1, 1]
+}

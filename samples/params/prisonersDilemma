@@ -1,0 +1,10 @@
+{
+    "name": "prisonersDilemma",
+    "description": "Two players interact in a repeated prisoner's dilemma game where mutual cooperation yields a payoff of 7 (R), mutual defection yields a payoff of 5 (P), temptation to defect yields a payoff of 10 (T) when the opponent cooperates, and the sucker's payoff is 0 (S) when the opponent defects. Population given as (#cooperators, #defectors).",
+    "type": "simple",
+    "M": [
+        [7, 0],
+        [10, 5]
+    ],
+    "w": [1, 1]
+}
