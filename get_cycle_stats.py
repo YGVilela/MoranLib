@@ -23,7 +23,7 @@ from matplotlib.pyplot import subplots, close
 
 from env import Env
 from src.misc.bars import SimpleBar
-from src.db.composedMoranDbDb import CycleData, ComposedMoranInstanceData
+from src.db.composedMoranDb import CycleData, ComposedMoranInstanceData
 
 # Parse args
 parser = argparse.ArgumentParser()

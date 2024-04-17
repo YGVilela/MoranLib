@@ -17,7 +17,7 @@ Arguments:
 import argparse
 from src.misc.bars import CountdownBar, ParallelBar
 from src.core.moranSim import ComposedMoranInstance
-from src.db.composedMoranDbDb import ComposedMoranInstanceData
+from src.db.composedMoranDb import ComposedMoranInstanceData
 from multiprocessing import Pool
 from math import floor
 

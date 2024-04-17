@@ -4,11 +4,12 @@ execute_simple_moran.py
 This script executes simple Moran simulations until fixation based on the specified parameters.
 
 Usage:
-    python3 execute_simple_moran.py [-r INSTANCE_REGEX] [-t THREADS]
+    python3 execute_simple_moran.py [-r INSTANCE_REGEX] [-t THREADS] [-m MAX_ITERATIONS]
 
 Arguments:
     -r, --instanceRegex: Regular expression to filter the simulations that should be executed. Default is '.*'.
     -t, --threads: Number of threads to be used in the execution. Default is 3.
+    -m, --maxIterations: Maximum number of iterations to perform for each simmulations. Default is 1,000,000.
 """
 
 import argparse
@@ -22,10 +23,12 @@ from math import floor
 parser = argparse.ArgumentParser()
 parser.add_argument("-r", "--instanceRegex", help="Regular expression to filter the simulations that should be executed. Default is '.*'", default=".*")
 parser.add_argument("-t", "--threads", help="Number of threads to be used in the execution. Default is 3.", default=3, type=int)
+parser.add_argument("-m", "--maxIterations", help="Maximum number of iterations to perform for each simmulations. Default is 1,000,000.", default=1E6, type=int)
 
 args = parser.parse_args()
 instanceRegex = args.instanceRegex
 threads = args.threads
+maxIterations = args.maxIterations
 
 # Load instances
 instanceNames = SimpleMoranInstanceData.list_instances(instanceRegex)
@@ -45,7 +48,7 @@ bar = ParallelBar(barSize)
 def run(sim: SimpleMoranInstance):
     print(f"Executing {sim.instanceData.name}")
 
-    (lastStep, fixatedIndex) = sim.execute()
+    (lastStep, fixatedIndex) = sim.execute(maxIterations=maxIterations)
 
     sim.instanceData.save_instance()
 

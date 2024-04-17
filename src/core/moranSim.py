@@ -1,7 +1,7 @@
 from math import ceil
 from numpy import array, cumsum
 
-from src.db.composedMoranDbDb import CycleData, ComposedMoranInstanceData
+from src.db.composedMoranDb import CycleData, ComposedMoranInstanceData
 from src.db.simpleMoranDb import IterationData, SimpleMoranInstanceData
 from src.dynamics.moran import MoranProcess
 
@@ -19,7 +19,7 @@ class SimpleMoranInstance:
 
         return SimpleMoranInstance(instanceData)
 
-    def execute(self, bufferSize=1000):
+    def execute(self, maxIterations=1E6, bufferSize=1000):
         if self.instanceData.lastStep != None:
             print(f"Executing {self.instanceData.name} already executed.")
 
@@ -35,7 +35,8 @@ class SimpleMoranInstance:
 
         print(f"Executing {self.instanceData.name} until fixation.")
         steps = 0
-        while True:
+        fixatedIndex = None
+        while steps < maxIterations:
             X = self.process.iterate(X)
 
             # Save population
@@ -44,15 +45,17 @@ class SimpleMoranInstance:
 
             # Check if reached fixation
             if len([x for x in X if x > 0]) == 1:
+                fixatedIndex = [
+                    index + 1
+                    for index in range(len(X.tolist()))
+                    if X[index] > 0
+                ][0]
+
                 break
 
         self.instanceData.lastStep = steps
-        fixatedIndex = [
-            index + 1
-            for index in range(len(X.tolist()))
-            if X[index] > 0
-        ][0]
         self.instanceData.fixatedIndex = fixatedIndex
+
         executionData.end_iterations(steps, fixatedIndex)
         
         return steps, fixatedIndex

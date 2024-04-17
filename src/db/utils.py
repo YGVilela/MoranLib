@@ -3,7 +3,7 @@ import json
 from os import path
 
 from env import Env
-from src.db.composedMoranDbDb import ComposedMoranParams, ComposedMoranInstanceData
+from src.db.composedMoranDb import ComposedMoranParams, ComposedMoranInstanceData
 from src.db.simpleMoranDb import SimpleMoranParams, SimpleMoranInstanceData
 
 

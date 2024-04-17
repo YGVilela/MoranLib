@@ -67,7 +67,7 @@ groupedData = df.groupby(by="label")
 lastStep_stats = groupedData['lastStep'].agg(['mean', 'std', 'max', 'min']).add_prefix('lastStep_')
 
 # Count occurrences of each value in "fixatedIndex"
-fixated_index_counts = groupedData['fixatedIndex'].value_counts().unstack(fill_value=0).add_prefix('fixated_index_')
+fixated_index_counts = groupedData['fixatedIndex'].value_counts(normalize=True).unstack(fill_value=0).add_prefix('fixated_index_')
 
 # Merge summary statistics and fixed index counts
 result = lastStep_stats.merge(fixated_index_counts, how='left', left_index=True, right_index=True)

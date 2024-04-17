@@ -1,0 +1,10 @@
+{
+    "name": "chickenGame",
+    "description": "The Chicken Game depicts a dilemma where two players face off, each with the choice to yield (Swerve) or stand firm (Go Straight). Swerving yields a moderate benefit (4), while going Straight grants a higher reward if the opponent yields (8 to the straighter and 2 to the swerver) but leads to a collision otherwise, resulting in the lowest payoff for both (0). Population given as (#swervers, #straighters).",
+    "type": "simple",
+    "M": [
+        [4, 2],
+        [8, 0]
+    ],
+    "w": [1, 1]
+}

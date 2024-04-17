@@ -194,4 +194,13 @@ class IterationData:
         file.close()
 
         return iterationsData
+
+    @staticmethod
+    def load_iteration_data_from_name(instanceName):
+        filePath = path.join(executionDataFolder, instanceName, f"iterationDump")
+        file = open(filePath)
+        iterationsData = json.load(file)
+        file.close()
+
+        return iterationsData
     
