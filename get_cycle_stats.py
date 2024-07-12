@@ -4,7 +4,7 @@ get_cycle_stats.py
 This script generates cycle statistics for composed Moran simulations based on the specified parameters and analysis options.
 
 Usage:
-    python3 get_cycle_stats.py [-r INSTANCE_REGEX] [-f FOLDER] [-d DELTA]
+    python3 get_cycle_stats.py [-r INSTANCE_REGEX] [-f FOLDER] [-d DELTA] [--lvData]
 
 Arguments:
     -r, --instanceRegex: Regular expression to filter the simulations that should be analysed. Default is '.*'.
@@ -16,7 +16,7 @@ import argparse
 from datetime import datetime
 import json
 from os import path, makedirs
-from numpy import arange
+from numpy import arange, array
 
 from pandas import DataFrame
 from matplotlib.pyplot import subplots, close
@@ -33,11 +33,20 @@ parser.add_argument(
     default=path.join(Env.DATA_FOLDER.name, Env.STATS_FOLDER.name)
 )
 parser.add_argument("-d", "--delta", help="Length of the histograms intervals. Default is 0.02", default=0.02, type=float)
+parser.add_argument("--lvData", action='store_true', required=False)
 
 args = parser.parse_args()
 instanceRegex = args.instanceRegex
 mainFolder = args.folder
 delta = args.delta
+lvData = args.lvData
+
+if lvData:
+    print("As lv")
+    parseFunc = lambda x: ((array(x)/x[-1])[:-1]).tolist()
+else:
+    print("As rep")
+    parseFunc = lambda x: (array(x)/sum(x)).tolist()
 
 # Load data
 instanceNames = ComposedMoranInstanceData.list_instances(instanceRegex)
@@ -57,10 +66,12 @@ for name in instanceNames:
             "cycleNumber": cycleNumber
         }
         totalPopulation = sum(instance.initialPopulation)
-        for index in range(len(cycleData.finalPopulation)):
-            relevantData[f"x{index+1}"] = cycleData.finalPopulation[index]
-            relevantData[f"diffX{index+1}"]  = cycleData.finalPopulation[index] - cycleData.initialPopulation[index]
-            relevantData[f"rel_x{index+1}"] = cycleData.finalPopulation[index]/totalPopulation
+
+        parsedInitialPop = parseFunc(instance.initialPopulation)
+        parsedFinalPop = parseFunc(cycleData.finalPopulation)
+        for index in range(len(parsedFinalPop)):
+            relevantData[f"parsedFinalX{index+1}"] = parsedFinalPop[index]
+            relevantData[f"parsedDiffX{index+1}"] = parsedFinalPop[index] - parsedInitialPop[index]
 
         allCycleData.append(relevantData)
 
@@ -93,12 +104,11 @@ for group in groupedData.groups:
     (params, initialPopulation, cycleNumber) = group
     paramStatsFolder = path.join(saveFolder, params, initialPopulation)
     makedirs(paramStatsFolder, exist_ok=True)
-    initialPopulationAsFloat = eval(initialPopulation)
-    totalPopulation = sum(initialPopulationAsFloat)
-    initialDistribution = [ pop/totalPopulation for pop in initialPopulationAsFloat ]
+    parsedInitialPop = parseFunc(eval(initialPopulation))
+    
 
     # Final points
-    pointVars = [f"x{index+1}" for index in range(len(eval(initialPopulation)))]
+    pointVars = [f"parsedFinalX{index+1}" for index in range(len(parsedInitialPop))]
     finalPoints = (groupedData.get_group(group)[pointVars]).to_numpy().tolist()
     finalPointsFile = path.join(paramStatsFolder, f"finalPoints_{cycleNumber}.json")
     with open(finalPointsFile, "w") as file:
@@ -106,16 +116,15 @@ for group in groupedData.groups:
     print(f"\nFinal points of {group} saved to {finalPointsFile}")
 
     # Histogram data
-    size = sum(eval(initialPopulation))
     histData = [
-        (groupedData.get_group(group)[var]/size).value_counts(bins=intervals, sort=False, normalize=True)
+        (groupedData.get_group(group)[var]).value_counts(bins=intervals, sort=False, normalize=True)
         for var in pointVars
     ]
 
     fig, axs = subplots(len(histData), 1, figsize=(9, 9), sharex=True)
     colors = ["blue", "green", "orange"]
     for index in range(len(histData)):
-        axs[index].axvline(x=initialDistribution[index], color='r', linestyle='--', linewidth=2)
+        axs[index].axvline(x=parsedInitialPop[index], color='r', linestyle='--', linewidth=2)
         axs[index].bar(histData[index].index.mid, histData[index].values, width=delta, align='center', color=colors[index%len(colors)])
         axs[index].set_ylim([0, 1])
         axs[index].set_title('')
