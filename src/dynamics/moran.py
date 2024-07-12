@@ -14,10 +14,10 @@ class MoranProcess:
         self.d = len(M)
         self.basis = [baseVector(self.d, i) for i in range(self.d)]
 
-        # Fitness of type i is defined as 1 - w_i + w_i*(M.(x - e_i)/(N-1))
+        # Fitness of type i is defined as 1 + w_i*(M.(x - e_i)/(N-1))
         # We define the following to improve performance
         self.modifiedM = (self.w*self.M.transpose()).transpose()/(self.N-1)
-        self.additiveTerm = np.ones(self.d) - self.w - [self.modifiedM[i, i] for i in range(self.d)]
+        self.additiveTerm = np.ones(self.d) - [self.modifiedM[i, i] for i in range(self.d)]
     
     def transitionProb(self, X):
         # Evaluate fitness

@@ -22,7 +22,7 @@ from pandas import DataFrame
 from matplotlib.pyplot import subplots, close
 
 from env import Env
-from src.misc.bars import SimpleBar
+from src.misc.bars import CountdownBar, SimpleBar
 from src.db.composedMoranDb import CycleData, ComposedMoranInstanceData
 
 # Parse args
@@ -41,10 +41,13 @@ delta = args.delta
 
 # Load data
 instanceNames = ComposedMoranInstanceData.list_instances(instanceRegex)
+# Safety check
+print(f"Loading {len(instanceNames)} simulations. Is that correct?")
+CountdownBar(5).start()
+
 bar = SimpleBar(len(instanceNames))
 allCycleData = []
 for name in instanceNames:
-    print(f"Loading {name} data.")
     instance = ComposedMoranInstanceData.load_instance(name)
     for cycleNumber in range(instance.currentCycle):
         cycleData = CycleData.load_summarized_data(instance.name, cycleNumber)
@@ -53,9 +56,11 @@ for name in instanceNames:
             "initialPopulation": f"{instance.initialPopulation}",
             "cycleNumber": cycleNumber
         }
+        totalPopulation = sum(instance.initialPopulation)
         for index in range(len(cycleData.finalPopulation)):
             relevantData[f"x{index+1}"] = cycleData.finalPopulation[index]
             relevantData[f"diffX{index+1}"]  = cycleData.finalPopulation[index] - cycleData.initialPopulation[index]
+            relevantData[f"rel_x{index+1}"] = cycleData.finalPopulation[index]/totalPopulation
 
         allCycleData.append(relevantData)
 
@@ -88,6 +93,9 @@ for group in groupedData.groups:
     (params, initialPopulation, cycleNumber) = group
     paramStatsFolder = path.join(saveFolder, params, initialPopulation)
     makedirs(paramStatsFolder, exist_ok=True)
+    initialPopulationAsFloat = eval(initialPopulation)
+    totalPopulation = sum(initialPopulationAsFloat)
+    initialDistribution = [ pop/totalPopulation for pop in initialPopulationAsFloat ]
 
     # Final points
     pointVars = [f"x{index+1}" for index in range(len(eval(initialPopulation)))]
@@ -95,7 +103,7 @@ for group in groupedData.groups:
     finalPointsFile = path.join(paramStatsFolder, f"finalPoints_{cycleNumber}.json")
     with open(finalPointsFile, "w") as file:
         json.dump(finalPoints, file)
-    print(f"Final points of {group} saved to {finalPointsFile}")
+    print(f"\nFinal points of {group} saved to {finalPointsFile}")
 
     # Histogram data
     size = sum(eval(initialPopulation))
@@ -107,10 +115,11 @@ for group in groupedData.groups:
     fig, axs = subplots(len(histData), 1, figsize=(9, 9), sharex=True)
     colors = ["blue", "green", "orange"]
     for index in range(len(histData)):
+        axs[index].axvline(x=initialDistribution[index], color='r', linestyle='--', linewidth=2)
         axs[index].bar(histData[index].index.mid, histData[index].values, width=delta, align='center', color=colors[index%len(colors)])
         axs[index].set_ylim([0, 1])
         axs[index].set_title('')
-        axs[index].legend([f"x{index + 1}"])
+        axs[index].legend([f"Initial x{index + 1}",f"x{index + 1}"])
 
     allHistFile = path.join(paramStatsFolder, f"histograms_{cycleNumber}.png")
     fig.savefig(allHistFile, bbox_inches='tight')
