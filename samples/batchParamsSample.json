@@ -5,13 +5,6 @@
         "simCount": 10,
         "namePrefix": "stableRep_1k"
     },
-
-    {
-        "paramsName": "lvRoutine",
-        "initialPopulation": [167, 167, 666],
-        "simCount": 10,
-        "namePrefix": "stableLv_1k"
-    },
     
     {
         "paramsName": "rockPaperScissors",

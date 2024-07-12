@@ -151,12 +151,6 @@ The _batchParamsFile.json_ must contain an array with items describing the insta
         "namePrefix": "stableRep_1k"
     },
     {
-        "paramsName": "lvRoutine",
-        "initialPopulation": [167, 167, 666],
-        "simCount": 10,
-        "namePrefix": "stableLv_1k"
-    },
-    {
         "paramsName": "rockPaperScissors",
         "initialPopulation": [100, 100, 100],
         "simCount": 10,
