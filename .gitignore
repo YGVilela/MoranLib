@@ -4,3 +4,4 @@ __pycache__
 !samples/
 samples/*
 !samples/params/
+!samples/batchParamsSample.json
