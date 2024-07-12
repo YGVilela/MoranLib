@@ -1,4 +1,4 @@
-from math import ceil
+from math import ceil, floor
 from numpy import array, cumsum
 
 from src.db.composedMoranDb import CycleData, ComposedMoranInstanceData
@@ -19,7 +19,7 @@ class SimpleMoranInstance:
 
         return SimpleMoranInstance(instanceData)
 
-    def execute(self, maxIterations=1E6, bufferSize=1000):
+    def execute(self, maxIterations=1E6, bufferSize=50000):
         if self.instanceData.lastStep != None:
             print(f"Executing {self.instanceData.name} already executed.")
 
@@ -86,8 +86,10 @@ class ComposedMoranInstance:
 
         return ComposedMoranInstance(instanceData)
 
-    def do_cycle(self, saveEach=50000, iterationCallback=None, callbackEach=1000, bufferSize=100):
+    def do_cycle(self, saveEach=50000, iterationCallback=None, callbackEach=1000, bufferSize=50000, saveTotal=None):
         X = array(self.instanceData.currentPopulation)
+        if saveTotal is not None:
+            saveEach = max(floor(self.totalSteps/saveTotal), 1)
 
         cycleData = CycleData.start_cycle(
             self.instanceData.name,

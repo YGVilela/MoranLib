@@ -102,7 +102,7 @@ class ComposedMoranInstanceData:
 
 class CycleData:
 
-    def __init__(self, instanceName, cycleNumber, initialPopulation, finalPopulation, bufferSize=100):
+    def __init__(self, instanceName, cycleNumber, initialPopulation, finalPopulation, bufferSize=50000):
         # General attributes
         self.instanceName = instanceName
         self.cycleNumber = cycleNumber
@@ -135,7 +135,7 @@ class CycleData:
         )
     
     @staticmethod
-    def start_cycle(instanceName, cycleNumber, initialPopulation, bufferSize=100):
+    def start_cycle(instanceName, cycleNumber, initialPopulation, bufferSize=50000):
         cycleData = CycleData(instanceName, cycleNumber, initialPopulation, None, bufferSize)
         
         filePath = path.join(cycleDataFolder, instanceName, f"iterationDump_{cycleNumber}")

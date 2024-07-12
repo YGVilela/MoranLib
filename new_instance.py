@@ -1,7 +1,7 @@
 """
 new_instances.py
 
-This script creates new instances of Moran simulations based on the specified parameters and initial population distribution.
+This script creates new instances of Moran simulations specified in the parameters and with the initial population distribution.
 
 Usage:
     python3 new_instances.py paramsName initialPopulation [-n SIM_COUNT] [-p NAME_PREFIX]

@@ -1,0 +1,15 @@
+[
+    {
+        "paramsName": "stableRoutine",
+        "initialPopulation": [300, 200, 500],
+        "simCount": 10,
+        "namePrefix": "stableRep_1k"
+    },
+    
+    {
+        "paramsName": "rockPaperScissors",
+        "initialPopulation": [100, 100, 100],
+        "simCount": 10,
+        "namePrefix": "balancedRPS_300"
+    }
+]

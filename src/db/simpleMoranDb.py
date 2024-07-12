@@ -99,7 +99,7 @@ class SimpleMoranInstanceData:
 
 class IterationData:
 
-    def __init__(self, instanceName, initialPopulation, lastStep, fixatedIndex, bufferSize=1000):
+    def __init__(self, instanceName, initialPopulation, lastStep, fixatedIndex, bufferSize=50000):
         # General attributes
         self.instanceName = instanceName
         self.lastStep = lastStep
@@ -132,7 +132,7 @@ class IterationData:
         )
     
     @staticmethod
-    def start_iterations(instanceName, initialPopulation, bufferSize=1000):
+    def start_iterations(instanceName, initialPopulation, bufferSize=50000):
         iterationData = IterationData(instanceName, initialPopulation, None, None, bufferSize)
         
         filePath = path.join(executionDataFolder, instanceName, f"iterationDump")
